@@ -1,0 +1,35 @@
+workflows:
+  android-debug-apk:
+    name: VideoSqueeze - Android Debug APK
+    max_build_duration: 60
+    instance_type: linux_x2
+
+    environment:
+      java: 17
+
+    scripts:
+      - name: Check Java and prepare Gradle wrapper
+        script: |
+          set -euo pipefail
+          java -version
+          if [ ! -f gradlew ]; then
+            echo "Gradle wrapper is missing; generating it with the build image's installed Gradle."
+            gradle wrapper --gradle-version 8.13
+          fi
+          chmod +x gradlew
+          ./gradlew --version
+
+      - name: Run unit tests
+        script: |
+          set -euo pipefail
+          ./gradlew --no-daemon testDebugUnitTest
+
+      - name: Build installable debug APK
+        script: |
+          set -euo pipefail
+          ./gradlew --no-daemon assembleDebug
+
+    artifacts:
+      - app/build/outputs/apk/**/*.apk
+      - app/build/reports/tests/**/*.html
+      - app/build/outputs/logs/**
